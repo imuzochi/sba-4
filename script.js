@@ -8,6 +8,11 @@ let addTaskButton = document.getElementById("add-task");
 let tasks = document.getElementById("task");
 
 addTaskButton.addEventListener("click", function () {
+  if (!taskInput.value) {
+    alert("Please enter a task name.");
+    return;
+  }
+
   let mytask = {
   name: taskInput.value,
   cat: taskCategory.querySelector('option:checked').textContent,
@@ -22,7 +27,21 @@ addTaskButton.addEventListener("click", function () {
   addTask(mytask);
   renderList();
   taskInput.value="";
+  taskDeadline.value = "";
+  taskCategory.selectedIndex = 0;
+  taskStatus.selectedIndex = 0;   
 });
+
+function isTaskOverdue(task) {
+  if (!task.time) {
+    return false;
+  }
+
+  let deadline = new Date(task.time);
+  let now = new Date();
+
+  return deadline < now;
+}
 
 function renderList() {
   // Clear existing list (emptying the <ul></ul>)
@@ -31,16 +50,40 @@ function renderList() {
   for (let i = 0; i < taskList.length; i++) {
     // create the <li>
     let listTask = document.createElement("li");
-    console.log(taskList[i].name);
-    console.log(taskList[i].cat);
-    console.log(taskList[i].time);
-    console.log(taskList[i].stat);
-    // use the data from the cart to add text to our new <li>
-    listTask.innerText += "Name: " + taskList[i].name + " Category: " + taskList[i].cat + " Time: " + 
-    taskList[i].time + " Status: " + taskList[i].stat;
-    console.log(tasks)
-    // add the <li> to the <ul> (and make it appear on our page!)
-   tasks.appendChild(listTask);
+    let overdue = isTaskOverdue(taskList[i]);
+
+    let taskText = document.createElement("span");
+    taskText.innerText =
+      "Name: " + taskList[i].name +
+      " | Category: " + taskList[i].cat +
+      " | Time: " + taskList[i].time +
+      " | Status: " + taskList[i].stat;
+
+    if (overdue) {
+      taskText.innerText += " | Overdue";
+    }
+
+    let statusSelect = document.createElement("select");
+    let statusOptions = ["Not Started", "In Progress", "Completed"];
+
+    statusOptions.forEach(function (optionText) {
+      let option = document.createElement("option");
+      option.value = optionText;
+      option.textContent = optionText;
+      if (taskList[i].stat === optionText) {
+        option.selected = true;
+      }
+      statusSelect.appendChild(option);
+    });
+
+    statusSelect.addEventListener("change", function () {
+      taskList[i].stat = statusSelect.value;
+      renderList();
+    });
+
+    listTask.appendChild(taskText);
+    listTask.appendChild(statusSelect);
+    tasks.appendChild(listTask);
   }
 }
 
